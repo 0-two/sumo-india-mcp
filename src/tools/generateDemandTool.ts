@@ -1,4 +1,4 @@
-import { ControllerDecorator as Controller, ToolDecorator as Tool, Injectable, ExecutionContext, z } from '@nitrostack/core';
+import { ControllerDecorator as Controller, ToolDecorator as Tool, Widget, Injectable, ExecutionContext, z } from '@nitrostack/core';
 import * as fs from 'fs';
 import * as path from 'path';
 import { CalibrationResource } from '../calibration/calibration.resource.js';
@@ -28,6 +28,7 @@ export class GenerateDemandController {
       }).describe('Percentage mix of Indian vehicle classes in the traffic pool (should sum to around 100)'),
     }),
   })
+  @Widget('demand-config')
   async generateSumoConfig(
     input: {
       total_vehicles: number;

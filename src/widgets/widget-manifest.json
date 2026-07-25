@@ -4,7 +4,7 @@
     {
       "uri": "simulation-results",
       "name": "Indian Traffic Simulation Results",
-      "description": "Interactive dashboard displaying heterogeneous gap-acceptance traffic metrics and congestion severity.",
+      "description": "Interactive Neo-Brutalism dashboard displaying heterogeneous gap-acceptance traffic metrics and congestion severity.",
       "tags": ["traffic", "sumo", "simulation", "india", "metrics"],
       "examples": [
         {
@@ -27,9 +27,57 @@
           }
         }
       ]
+    },
+    {
+      "uri": "demand-config",
+      "name": "Traffic Demand & Fleet Configuration",
+      "description": "Interactive Neo-Brutalism breakdown widget displaying Indian vehicle class ratios and sublane model parameters.",
+      "tags": ["demand", "vehicles", "sublane", "config", "india"],
+      "examples": [
+        {
+          "name": "Sample Vehicle Mix",
+          "description": "300 vehicles demand configuration with 50% 2-wheelers, 20% autos, 20% cars, 10% buses.",
+          "data": {
+            "success": true,
+            "message": "Successfully generated SUMO traffic config files.",
+            "config_summary": {
+              "total_vehicles": 300,
+              "breakdown": {
+                "two_wheeler": 150,
+                "auto_rickshaw": 60,
+                "passenger_car": 60,
+                "bus": 30
+              },
+              "sublane_model": {
+                "enabled": true,
+                "lateral_resolution_m": 0.8
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "uri": "osm-network",
+      "name": "OpenStreetMap Network Status",
+      "description": "Interactive Neo-Brutalism widget showing OSM bounding box geocoding and SUMO netconvert compilation status.",
+      "tags": ["osm", "map", "netconvert", "network", "geocoding"],
+      "examples": [
+        {
+          "name": "Silk Board Junction Example",
+          "description": "OSM network fetch status for Silk Board Junction, Bengaluru.",
+          "data": {
+            "success": true,
+            "message": "Successfully generated network.net.xml for Silk Board Junction, Bengaluru",
+            "network_details": {
+              "location_query": "Silk Board Junction, Bengaluru",
+              "display_name": "Silk Board Flyover, Central Silk Board Junction, Hosur Road, BTM Layout, Bengaluru, Karnataka, 560068, India",
+              "bbox": [12.915, 12.920, 77.620, 77.625]
+            }
+          }
+        }
+      ]
     }
   ],
-  "generatedAt": "2026-07-25T13:35:00.000Z"
+  "generatedAt": "2026-07-25T22:30:00.000Z"
 }
-
-
