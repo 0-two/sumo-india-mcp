@@ -23,8 +23,8 @@ export interface SimulationSummaryProps {
 /**
  * SimulationSummary React Component
  * 
- * Renders a rich dashboard card for Indian Heterogeneous Traffic simulation outcomes.
- * Features dynamic congestion grading badges and cleanly formatted physical statistics.
+ * Renders an enterprise dashboard card for Western Homogeneous Traffic simulation outcomes.
+ * Features real-time urban congestion grading badges and cleanly formatted physical travel statistics.
  */
 export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, message, metrics }) => {
   if (!metrics) {
@@ -38,26 +38,25 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
         textAlign: 'center',
         fontFamily: 'system-ui, -apple-system, sans-serif'
       }}>
-        <p style={{ margin: 0, opacity: 0.8, fontSize: '14px' }}>Awaiting traffic simulation outcome metrics...</p>
+        <p style={{ margin: 0, opacity: 0.8, fontSize: '14px' }}>Awaiting urban traffic simulation analytics...</p>
       </div>
     );
   }
 
   const { meanWaitingTime, meanTravelTime, running } = metrics;
 
-  // Determine Congestion Badge (Green if < 10, Yellow if < 30, Red if >= 30)
   let badgeColor = '#22c55e'; // Green
   let badgeBg = 'rgba(34, 197, 94, 0.15)';
-  let badgeText = 'LOW CONGESTION (GREEN)';
+  let badgeText = 'SMOOTH FLOW (LOW CONGESTION)';
 
   if (meanWaitingTime >= 30) {
     badgeColor = '#ef4444'; // Red
     badgeBg = 'rgba(239, 68, 68, 0.18)';
-    badgeText = 'SEVERE CONGESTION (RED)';
-  } else if (meanWaitingTime >= 10) {
+    badgeText = 'HEAVY GRIDLOCK (RED CONGESTION)';
+  } else if (meanWaitingTime >= 12) {
     badgeColor = '#eab308'; // Yellow
     badgeBg = 'rgba(234, 179, 8, 0.18)';
-    badgeText = 'MODERATE CONGESTION (YELLOW)';
+    badgeText = 'MODERATE URBAN DELAYS (YELLOW)';
   }
 
   return (
@@ -86,10 +85,10 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
       }}>
         <div>
           <h2 style={{ margin: 0, fontSize: '20px', fontWeight: 700, letterSpacing: '-0.02em', color: '#ffffff' }}>
-            Indian Traffic Simulation Results
+            Urban Mobility Simulation Results
           </h2>
           <p style={{ margin: '5px 0 0 0', fontSize: '13px', color: '#94a3b8' }}>
-            Heterogeneous gap-acceptance sublane analysis
+            Western lane-disciplined urban traffic corridor analysis
           </p>
         </div>
         <div style={{
@@ -116,7 +115,6 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
         gap: '14px',
         marginBottom: '20px'
       }}>
-        {/* Average Delay Card */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.035)',
           padding: '18px 14px',
@@ -128,18 +126,17 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
           justifyContent: 'center'
         }}>
           <span style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
-            Average Delay
+            Average Stop Delay
           </span>
           <div style={{ fontSize: '28px', fontWeight: 800, color: badgeColor, lineHeight: '1' }}>
             {meanWaitingTime}
             <span style={{ fontSize: '15px', fontWeight: 500, color: '#64748b', marginLeft: '3px' }}>s</span>
           </div>
           <span style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>
-            meanWaitingTime
+            per active vehicle
           </span>
         </div>
 
-        {/* Travel Time Card */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.035)',
           padding: '18px 14px',
@@ -151,7 +148,7 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
           justifyContent: 'center'
         }}>
           <span style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
-            Travel Time
+            Mean Trip Duration
           </span>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#38bdf8', lineHeight: '1' }}>
             {meanTravelTime}
@@ -162,7 +159,6 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
           </span>
         </div>
 
-        {/* Vehicle Volume Card */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.035)',
           padding: '18px 14px',
@@ -174,13 +170,13 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
           justifyContent: 'center'
         }}>
           <span style={{ fontSize: '11px', color: '#94a3b8', marginBottom: '8px', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>
-            Vehicle Volume
+            Active Fleet Volume
           </span>
           <div style={{ fontSize: '28px', fontWeight: 800, color: '#a78bfa', lineHeight: '1' }}>
             {running}
           </div>
           <span style={{ fontSize: '11px', color: '#64748b', marginTop: '8px' }}>
-            active running
+            vehicles in network
           </span>
         </div>
       </div>
@@ -197,10 +193,10 @@ export const SimulationSummary: React.FC<SimulationSummaryProps> = ({ success, m
           flexWrap: 'wrap',
           gap: '8px'
         }}>
-          <div>Arrived: <strong style={{ color: '#10b981', marginLeft: '4px' }}>{metrics.additional_stats.total_arrived_vehicles ?? 0}</strong></div>
-          <div>Loaded: <strong style={{ color: '#60a5fa', marginLeft: '4px' }}>{metrics.additional_stats.total_loaded_vehicles ?? 0}</strong></div>
+          <div>Arrived Trips: <strong style={{ color: '#10b981', marginLeft: '4px' }}>{metrics.additional_stats.total_arrived_vehicles ?? 0}</strong></div>
+          <div>Loaded Fleet: <strong style={{ color: '#60a5fa', marginLeft: '4px' }}>{metrics.additional_stats.total_loaded_vehicles ?? 0}</strong></div>
           <div>Collisions: <strong style={{ color: metrics.additional_stats.collisions_reported ? '#f43f5e' : '#10b981', marginLeft: '4px' }}>{metrics.additional_stats.collisions_reported ?? 0}</strong></div>
-          <div>Sim Time: <strong style={{ color: '#e2e8f0', marginLeft: '4px' }}>{metrics.additional_stats.simulation_end_time_s ?? 0}s</strong></div>
+          <div>Sim Horizon: <strong style={{ color: '#e2e8f0', marginLeft: '4px' }}>{metrics.additional_stats.simulation_end_time_s ?? 0}s</strong></div>
         </div>
       )}
 

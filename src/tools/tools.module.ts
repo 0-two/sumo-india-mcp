@@ -1,24 +1,46 @@
 import { Module } from '@nitrostack/core';
-import { FetchOsmController } from './fetchOsmTool.js';
-import { GenerateDemandController } from './generateDemandTool.js';
-import { RunSimController } from './runSimTool.js';
+import { OsmDownloadController } from './osmDownload.tool.js';
+import { UploadOsmController } from './uploadOsm.tool.js';
+import { NetconvertController } from './netconvert.tool.js';
+import { AiSignalOptimizerController } from './aiSignalOptimizer.tool.js';
+import { TrafficDemandController } from './trafficDemand.tool.js';
+import { SimulateController } from './simulate.tool.js';
 import { CalibrationModule } from '../calibration/calibration.module.js';
 
 /**
  * Tools Module
  * 
- * Aggregates all simulation orchestration tools, linking OSM road network extraction,
- * traffic demand modeling, headless simulation runner, and Indian vehicle calibration.
+ * Registers our complete suite of 6 Western urban simulation tools:
+ * Option 1 (API Ingestion), Option 2 (Local File Upload), High-Res Netconvert, AI Signal Optimizer,
+ * Traffic Demand Generator, Headless Simulator Widget, and Native GUI Launcher.
  */
 @Module({
   name: 'tools',
-  description: 'Simulation orchestration tools including OpenStreetMap ingestion, demand modeling, and headless SUMO execution',
+  description: 'Complete Western urban simulation tool suite with OSM uploads, AI traffic light green-waves, and automated visual GUI launching',
   imports: [CalibrationModule],
-  controllers: [FetchOsmController, GenerateDemandController, RunSimController],
-  providers: [FetchOsmController, GenerateDemandController, RunSimController],
-  exports: [FetchOsmController, GenerateDemandController, RunSimController],
+  controllers: [
+    OsmDownloadController,
+    UploadOsmController,
+    NetconvertController,
+    AiSignalOptimizerController,
+    TrafficDemandController,
+    SimulateController,
+  ],
+  providers: [
+    OsmDownloadController,
+    UploadOsmController,
+    NetconvertController,
+    AiSignalOptimizerController,
+    TrafficDemandController,
+    SimulateController,
+  ],
+  exports: [
+    OsmDownloadController,
+    UploadOsmController,
+    NetconvertController,
+    AiSignalOptimizerController,
+    TrafficDemandController,
+    SimulateController,
+  ],
 })
 export class ToolsModule {}
-
-
-
