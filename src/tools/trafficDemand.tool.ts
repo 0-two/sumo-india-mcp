@@ -1,4 +1,4 @@
-import { ControllerDecorator as Controller, ToolDecorator as Tool, Injectable, ExecutionContext, z } from '@nitrostack/core';
+import { ControllerDecorator as Controller, ToolDecorator as Tool, Widget, Injectable, ExecutionContext, z } from '@nitrostack/core';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -20,6 +20,7 @@ export class TrafficDemandController {
       truck_percentage: z.number().min(0).max(100).default(15).describe('Percentage of commercial delivery trucks and large service vehicles (default 15%)'),
     }),
   })
+  @Widget('demand-config')
   async generateWesternTraffic(
     input: { total_vehicles: number; truck_percentage: number },
     ctx: ExecutionContext

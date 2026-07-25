@@ -3,33 +3,73 @@
   "widgets": [
     {
       "uri": "simulation-results",
-      "name": "Indian Traffic Simulation Results",
-      "description": "Interactive dashboard displaying heterogeneous gap-acceptance traffic metrics and congestion severity.",
-      "tags": ["traffic", "sumo", "simulation", "india", "metrics"],
+      "name": "Urban Traffic Simulation Results",
+      "description": "Interactive dashboard displaying urban traffic outcomes and congestion metrics.",
+      "tags": ["traffic", "sumo", "simulation", "metrics"],
       "examples": [
         {
-          "name": "Moderate Congestion Example",
-          "description": "Simulation outcome showing moderate waiting delays across an Indian road intersection.",
+          "name": "Smooth Flow Example",
+          "description": "Simulation outcome showing smooth flow across an urban road corridor.",
           "data": {
             "success": true,
-            "message": "Headless SUMO Indian heterogeneous traffic simulation completed successfully at t=3600s.",
+            "message": "Headless SUMO simulation completed successfully.",
             "metrics": {
-              "meanWaitingTime": 18.5,
-              "meanTravelTime": 142.3,
-              "running": 45,
+              "meanWaitingTime": 8.5,
+              "meanTravelTime": 112.3,
+              "running": 35,
               "additional_stats": {
                 "simulation_end_time_s": 3600,
-                "total_loaded_vehicles": 300,
-                "total_arrived_vehicles": 255,
+                "total_loaded_vehicles": 450,
+                "total_arrived_vehicles": 415,
                 "collisions_reported": 0
               }
             }
           }
         }
       ]
+    },
+    {
+      "uri": "demand-config",
+      "name": "Traffic Demand & Fleet Configuration",
+      "description": "Interactive breakdown widget displaying urban vehicle class ratios and simulation settings.",
+      "tags": ["demand", "vehicles", "config"],
+      "examples": [
+        {
+          "name": "Sample Vehicle Mix",
+          "description": "450 vehicles demand configuration with cars, taxis, trucks, and buses.",
+          "data": {
+            "success": true,
+            "step": "3 & 5) Route Assignment and Western Simulation Setup",
+            "message": "Successfully generated Western urban traffic demand.",
+            "urban_fleet_mix": {
+              "passenger_cars_pct": "52% (White Sedans/SUVs)",
+              "yellow_taxis_pct": "25% (Bright NYC Yellow)",
+              "delivery_trucks_pct": "15% (Blue Delivery Rigs)",
+              "city_buses_pct": "8% (Red Transit Buses)"
+            },
+            "gui_aesthetics_linked": "gui-settings.view.xml active"
+          }
+        }
+      ]
+    },
+    {
+      "uri": "osm-network",
+      "name": "OpenStreetMap Network Status",
+      "description": "Interactive widget showing OSM bounding box geocoding and map download status.",
+      "tags": ["osm", "map", "network", "geocoding"],
+      "examples": [
+        {
+          "name": "Times Square Example",
+          "description": "OSM network fetch status for Times Square, New York.",
+          "data": {
+            "success": true,
+            "step": "1) Search and Download Open Street Map (OSM)",
+            "message": "Successfully ingested Western urban road geometry for Times Square, New York.",
+            "file_path": "simulation_data/map.osm"
+          }
+        }
+      ]
     }
   ],
-  "generatedAt": "2026-07-25T13:35:00.000Z"
+  "generatedAt": "2026-07-25T21:30:00.000Z"
 }
-
-

@@ -1,4 +1,4 @@
-import { ControllerDecorator as Controller, ToolDecorator as Tool, ExecutionContext, z } from '@nitrostack/core';
+import { ControllerDecorator as Controller, ToolDecorator as Tool, Widget, ExecutionContext, z } from '@nitrostack/core';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -19,6 +19,7 @@ export class OsmDownloadController {
       location_query: z.string().default('Times Square, Manhattan').describe('Specific urban intersection, district, or street corridor (e.g., Times Square, 5th Avenue, Wall Street)'),
     }),
   })
+  @Widget('osm-network')
   async downloadOsm(
     input: { city: string; location_query: string },
     ctx: ExecutionContext
