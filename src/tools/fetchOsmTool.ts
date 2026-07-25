@@ -104,10 +104,18 @@ out body;`;
     for (const mirrorUrl of overpassMirrors) {
       try {
         ctx?.logger?.info(`Attempting Overpass query via mirror: ${mirrorUrl}`);
-        const overpassRes = await axios.post(mirrorUrl, overpassQuery, {
-          headers: { 'Content-Type': 'text/plain', 'User-Agent': 'SUMO-India-MCP/1.0 (Hackathon)' },
-          timeout: 18000, // 18-second per-mirror timeout for snappy failover
-        });
+        const overpassRes = await axios.post(
+          mirrorUrl, 
+          `data=${encodeURIComponent(overpassQuery)}`, 
+          {
+            headers: { 
+              'Content-Type': 'application/x-www-form-urlencoded', 
+              'User-Agent': 'SUMO-India-MCP/1.0 (Hackathon)' 
+            },
+            timeout: 18000, // 18-second per-mirror timeout for snappy failover
+          }
+        );
+
 
         if (typeof overpassRes.data === 'string' && overpassRes.data.includes('<osm')) {
           osmXmlData = overpassRes.data;

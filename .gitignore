@@ -58,3 +58,4 @@ tokens.json
 
 # SUMO runtime simulation artifacts
 simulation_data/
+.nitrostudio/
