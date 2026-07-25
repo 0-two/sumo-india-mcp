@@ -1,4 +1,4 @@
-import { ControllerDecorator as Controller, ToolDecorator as Tool, ExecutionContext, z } from '@nitrostack/core';
+import { ControllerDecorator as Controller, ToolDecorator as Tool, Widget, ExecutionContext, z } from '@nitrostack/core';
 import axios from 'axios';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -22,10 +22,11 @@ export class FetchOsmController {
       location_query: z.string().describe('Natural language location query, e.g., "Silk Board Junction, Bengaluru"'),
     }),
   })
+  @Widget('osm-network')
   async fetchOsmNetwork(
     input: { location_query: string },
     ctx: ExecutionContext
-  ): Promise<string> {
+  ) {
     const userAgent = 'NitroStack-SUMO-Hackathon/1.0';
     ctx?.logger?.info(`[fetch_osm_network] Geocoding location: "${input.location_query}"...`);
 
@@ -133,7 +134,17 @@ export class FetchOsmController {
       const successMsg = `Successfully generated network.net.xml for ${input.location_query}`;
       ctx?.logger?.info(`[fetch_osm_network] ${successMsg}`);
 
-      return successMsg;
+      return {
+        success: true,
+        message: successMsg,
+        network_details: {
+          location_query: input.location_query,
+          display_name: locationName,
+          bbox: bbox ? bbox.map((b: string) => parseFloat(b)) : [],
+          osm_file: path.join(simDir, 'network.osm'),
+          net_file: path.join(simDir, 'network.net.xml'),
+        }
+      };
     } catch (error: any) {
       const errorMsg = `Failed to fetch and convert OSM network for "${input.location_query}": ${error.message}`;
       ctx?.logger?.error(`[fetch_osm_network] ${errorMsg}`);
