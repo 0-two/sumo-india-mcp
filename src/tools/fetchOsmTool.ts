@@ -10,198 +10,134 @@ const execAsync = promisify(exec);
 /**
  * OpenStreetMap & SUMO Network Tool Controller
  *
- * Provides intelligent ingestion of real-world Indian road network geometries from OpenStreetMap
- * and translates them into headless SUMO simulation networks via netconvert.
+ * Fetches road network geometry from OpenStreetMap for a natural language location,
+ * saves network.osm, and converts it to network.net.xml using SUMO netconvert.
  */
 @Controller('')
 export class FetchOsmController {
   @Tool({
     name: 'fetch_osm_network',
-    description: 'Fetch OpenStreetMap (OSM) road network XML data for a location in India and compile it into an accurate SUMO network file (network.net.xml) using SUMO netconvert.',
+    description: 'Fetch OpenStreetMap (OSM) road network XML data for a location query and convert it into a SUMO network file (network.net.xml) using SUMO netconvert.',
     inputSchema: z.object({
-      city: z.string().describe('City name in India, e.g., Bengaluru, Mumbai, or Delhi'),
-      location_query: z.string().describe('Specific road, corridor, or junction query within the city, e.g., Outer Ring Road or Silk Board Junction'),
+      location_query: z.string().describe('Natural language location query, e.g., "Silk Board Junction, Bengaluru"'),
     }),
   })
   async fetchOsmNetwork(
-    input: { city: string; location_query: string },
+    input: { location_query: string },
     ctx: ExecutionContext
-  ) {
-    const fullQuery = `${input.location_query}, ${input.city}, India`;
-    ctx?.logger?.info(`[fetch_osm_network] Initiating OSM ingestion for query: "${fullQuery}"`);
+  ): Promise<string> {
+    const userAgent = 'NitroStack-SUMO-Hackathon/1.0';
+    ctx?.logger?.info(`[fetch_osm_network] Geocoding location: "${input.location_query}"...`);
 
-    // Default bounding box fallback (e.g., typical urban stretch in Bengaluru) if geocoding fails
-    let south = 12.9100;
-    let west = 77.6200;
-    let north = 12.9300;
-    let east = 77.6400;
-
-    // 1. Geocode Location to Bounding Box via Nominatim
     try {
-      const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(fullQuery)}&format=json&limit=1`;
-      ctx?.logger?.info(`Querying Nominatim API for bounding coordinates...`);
-      
+      // Step A (Geocoding): Call public Nominatim API to get the bounding box
+      const nomUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(input.location_query)}&format=json&limit=1`;
       const nomRes = await axios.get(nomUrl, {
-        headers: { 'User-Agent': 'SUMO-India-MCP-Calibration-Layer/1.0 (Hackathon)' },
+        headers: { 'User-Agent': userAgent },
         timeout: 10000,
       });
 
-      if (nomRes.data && Array.isArray(nomRes.data) && nomRes.data.length > 0) {
-        const result = nomRes.data[0];
-        const bbox = result.boundingbox; // [south, north, west, east] as strings
-        
-        if (bbox && bbox.length === 4) {
-          const s = parseFloat(bbox[0]);
-          const n = parseFloat(bbox[1]);
-          const w = parseFloat(bbox[2]);
-          const e = parseFloat(bbox[3]);
-
-          // Protect simulation from excessive Overpass memory & netconvert build times during hackathon demo:
-          // If bounding box exceeds 0.04 degrees (~4km), center a clean 3 km x 3 km window around centroid.
-          if (Math.abs(n - s) > 0.04 || Math.abs(e - w) > 0.04) {
-            const centerLat = parseFloat(result.lat) || (s + n) / 2;
-            const centerLon = parseFloat(result.lon) || (w + e) / 2;
-            south = centerLat - 0.015;
-            north = centerLat + 0.015;
-            west = centerLon - 0.015;
-            east = centerLon + 0.015;
-            ctx?.logger?.info(`Target region is large. Constrained bounding box to ~3x3 km around (${centerLat.toFixed(4)}, ${centerLon.toFixed(4)}) for rapid SUMO simulation.`);
-          } else {
-            south = Math.min(s, n);
-            north = Math.max(s, n);
-            west = Math.min(w, e);
-            east = Math.max(w, e);
-          }
-        }
-      } else {
-        ctx?.logger?.warn(`Nominatim could not accurately resolve "${fullQuery}". Defaulting to Bengaluru urban traffic corridor coordinates.`);
+      if (!nomRes.data || !Array.isArray(nomRes.data) || nomRes.data.length === 0) {
+        throw new Error(`Nominatim geocoding found no results for location: "${input.location_query}"`);
       }
-    } catch (nomErr: any) {
-      ctx?.logger?.warn(`Nominatim Geocoding API lookup failed: ${nomErr.message}. Proceeding with fallback urban coordinates.`);
-    }
 
-    // 2. Fetch Raw OSM XML Data from Overpass API (with Multi-Mirror Redundancy & Safe-Mode Fallback)
-    const overpassQuery = `[out:xml][timeout:25];
-(
-  way["highway"~"motorway|trunk|primary|secondary|tertiary|unclassified|residential|service|secondary_link|primary_link|trunk_link|motorway_link"](${south},${west},${north},${east});
-  node(w);
-);
-out body;`;
+      const firstResult = nomRes.data[0];
+      const bbox = firstResult.boundingbox; // [latMin, latMax, lonMin, lonMax] as strings
+      if (!bbox || !Array.isArray(bbox) || bbox.length < 4) {
+        throw new Error(`Nominatim API returned invalid bounding box for location: "${input.location_query}"`);
+      }
 
-    const overpassMirrors = [
-      'https://overpass-api.de/api/interpreter',
-      'https://overpass.kumi.systems/api/interpreter',
-      'https://maps.mail.ru/osm/tools/overpass/api/interpreter',
-      'https://overpass.nchc.org.tw/api/interpreter',
-    ];
+      const latMin = parseFloat(bbox[0]);
+      const latMax = parseFloat(bbox[1]);
+      const lonMin = parseFloat(bbox[2]);
+      const lonMax = parseFloat(bbox[3]);
 
-    ctx?.logger?.info(`Fetching road network from Overpass API mirrors [bbox: ${south.toFixed(4)}, ${west.toFixed(4)}, ${north.toFixed(4)}, ${east.toFixed(4)}]...`);
-    
-    let osmXmlData: string | undefined;
-    let usedMirror: string | undefined;
-    let isSafeModeFallback = false;
+      // Step B (Overpass API): Convert bounding box format to south, west, north, east (latMin, lonMin, latMax, lonMax)
+      const south = latMin;
+      const west = lonMin;
+      const north = latMax;
+      const east = lonMax;
 
-    for (const mirrorUrl of overpassMirrors) {
+      ctx?.logger?.info(`[fetch_osm_network] Querying Overpass API for bbox: south=${south}, west=${west}, north=${north}, east=${east}...`);
+
+      const overpassQuery = `[out:xml]; way(${south},${west},${north},${east})[highway]; (._;>;); out body;`;
+      const overpassUrl = 'https://overpass.private.coffee/api/interpreter';
+
+      let overpassRes;
       try {
-        ctx?.logger?.info(`Attempting Overpass query via mirror: ${mirrorUrl}`);
-        const overpassRes = await axios.post(
-          mirrorUrl, 
-          `data=${encodeURIComponent(overpassQuery)}`, 
+        overpassRes = await axios.post(
+          overpassUrl,
+          `data=${encodeURIComponent(overpassQuery)}`,
           {
-            headers: { 
-              'Content-Type': 'application/x-www-form-urlencoded', 
-              'User-Agent': 'SUMO-India-MCP/1.0 (Hackathon)' 
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+              'User-Agent': userAgent,
             },
-            timeout: 18000, // 18-second per-mirror timeout for snappy failover
+            timeout: 30000,
           }
         );
-
-
-        if (typeof overpassRes.data === 'string' && overpassRes.data.includes('<osm')) {
-          osmXmlData = overpassRes.data;
-          usedMirror = mirrorUrl;
-          ctx?.logger?.info(`Successfully retrieved OSM network data via mirror: ${mirrorUrl}`);
-          break;
-        }
-      } catch (mirrorErr: any) {
-        const errorMsg = mirrorErr.response?.data ? String(mirrorErr.response.data) : mirrorErr.message;
-        ctx?.logger?.warn(`Mirror (${mirrorUrl}) temporarily unavailable: ${errorMsg}. Continuing to next backup mirror...`);
+      } catch (err: any) {
+        ctx?.logger?.warn(`Overpass POST form request failed: ${err.message}. Retrying with raw Overpass QL body...`);
+        overpassRes = await axios.post(
+          overpassUrl,
+          overpassQuery,
+          {
+            headers: {
+              'Content-Type': 'text/plain',
+              'User-Agent': userAgent,
+            },
+            timeout: 30000,
+          }
+        );
       }
-    }
 
-    const simDir = path.join(process.cwd(), 'simulation_data');
-    if (!fs.existsSync(simDir)) {
-      fs.mkdirSync(simDir, { recursive: true });
-    }
+      const osmData = overpassRes.data;
+      const osmContent = typeof osmData === 'string' ? osmData : JSON.stringify(osmData);
 
-    const osmFilePath = path.join(simDir, 'network.osm');
-    const netXmlFilePath = path.join(simDir, 'network.net.xml');
+      if (!osmContent || !osmContent.includes('<osm')) {
+        throw new Error(`Overpass API returned invalid OSM XML payload for location: "${input.location_query}"`);
+      }
 
-    // 3. Save or Synthesize Network Geometry
-    let netconvertCmd = `netconvert --osm-files network.osm -o network.net.xml --geometry.remove --ramps.guess`;
+      // Save raw XML response locally to the root directory as network.osm (using Node's fs.promises)
+      const rootOsmPath = path.join(process.cwd(), 'network.osm');
+      await fs.promises.writeFile(rootOsmPath, osmContent, 'utf-8');
 
-    if (!osmXmlData) {
-      // Engage Hackathon Safe-Mode: All live Overpass servers experienced latency/outages
-      isSafeModeFallback = true;
-      ctx?.logger?.warn(`[Hackathon Safe-Mode] All remote Overpass OSM servers are currently experiencing high load or timeouts.`);
-      ctx?.logger?.info(`[Hackathon Safe-Mode] Engaging native SUMO road grid synthesis to generate realistic 3x3 multi-lane Indian intersection geometry...`);
+      // Sync to simulation_data directory if present or create it
+      const simDir = path.join(process.cwd(), 'simulation_data');
+      if (!fs.existsSync(simDir)) {
+        await fs.promises.mkdir(simDir, { recursive: true });
+      }
+      await fs.promises.writeFile(path.join(simDir, 'network.osm'), osmContent, 'utf-8');
 
-      // Create dummy OSM mock to satisfy directory structure checks
-      const dummyOsm = `<?xml version="1.0" encoding="UTF-8"?><osm version="0.6" generator="HackathonSafeMode"></osm>`;
-      fs.writeFileSync(osmFilePath, dummyOsm, 'utf-8');
+      ctx?.logger?.info(`[fetch_osm_network] Saved raw OSM XML to ${rootOsmPath}`);
 
-      // Use SUMO native grid generator to synthesize an urban road matrix (2 lanes, 50 km/h default urban speed)
-      netconvertCmd = `netconvert --grid --grid.number=3 --grid.length=450 --grid.attach-length=150 --default.lanenum=2 --default.speed=13.89 -o network.net.xml --no-turnloops`;
-    } else {
+      // Step C (SUMO Conversion): Run netconvert CLI command using child_process.exec wrapped in a Promise
+      ctx?.logger?.info(`[fetch_osm_network] Running netconvert command...`);
+      const netconvertCmd = `netconvert --osm-files network.osm -o network.net.xml --geometry.remove --ramps.guess`;
+
       try {
-        fs.writeFileSync(osmFilePath, osmXmlData, 'utf-8');
-        ctx?.logger?.info(`Successfully saved live OSM network file to ${osmFilePath} (${Math.round(osmXmlData.length / 1024)} KB).`);
-      } catch (writeErr: any) {
-        throw new Error(`Failed to write network.osm file to disk: ${writeErr.message}`);
+        await execAsync(netconvertCmd, { cwd: process.cwd() });
+      } catch (execErr: any) {
+        throw new Error(`netconvert execution failed: ${execErr.message}`);
       }
-    }
 
-    // 4. Invoke SUMO netconvert via child_process
-    ctx?.logger?.info(`Executing SUMO netconvert compiler: ${netconvertCmd}`);
-
-    try {
-      const { stdout, stderr } = await execAsync(netconvertCmd, { cwd: simDir });
-      if (stderr && !fs.existsSync(netXmlFilePath)) {
-        ctx?.logger?.warn(`netconvert compiler feedback: ${stderr}`);
+      const rootNetPath = path.join(process.cwd(), 'network.net.xml');
+      if (!fs.existsSync(rootNetPath)) {
+        throw new Error('netconvert command executed, but network.net.xml was not created in the root directory.');
       }
-    } catch (execErr: any) {
-      ctx?.logger?.error(`netconvert execution failed: ${execErr.message}`);
-      throw new Error(
-        `SUMO netconvert command failed. Ensure SUMO traffic simulation binaries are installed locally and available in system PATH. Details: ${execErr.message}`
-      );
+
+      // Sync compiled network to simulation_data directory as well
+      await fs.promises.copyFile(rootNetPath, path.join(simDir, 'network.net.xml'));
+
+      const locationName = firstResult.display_name || input.location_query;
+      const successMsg = `Successfully generated network.net.xml for ${input.location_query}`;
+      ctx?.logger?.info(`[fetch_osm_network] ${successMsg}`);
+
+      return successMsg;
+    } catch (error: any) {
+      const errorMsg = `Failed to fetch and convert OSM network for "${input.location_query}": ${error.message}`;
+      ctx?.logger?.error(`[fetch_osm_network] ${errorMsg}`);
+      throw new Error(errorMsg);
     }
-
-    if (!fs.existsSync(netXmlFilePath)) {
-      throw new Error('SUMO netconvert command executed, but network.net.xml file was not found in simulation directory.');
-    }
-
-    const compiledSizeKb = Math.round(fs.statSync(netXmlFilePath).size / 1024);
-    ctx?.logger?.info(`Successfully compiled SUMO network file: network.net.xml (${compiledSizeKb} KB).`);
-
-    // 5. Return Structured Success Notice
-    const sourceStatus = isSafeModeFallback
-      ? `Hackathon Safe-Mode (Native SUMO 3x3 Urban Road Matrix Synthesizer due to Overpass server traffic)`
-      : `Live OpenStreetMap Geometry (via ${usedMirror})`;
-
-    return {
-      success: true,
-      message: `Successfully generated SUMO simulation network (network.net.xml, ${compiledSizeKb} KB) for "${input.location_query}, ${input.city}". Source: ${sourceStatus}.`,
-      location: {
-        city: input.city,
-        query: input.location_query,
-        bounding_box: { south, west, north, east },
-        source_engine: sourceStatus,
-      },
-      artifacts: {
-        osm_source_file: osmFilePath,
-        sumo_network_file: netXmlFilePath,
-      }
-    };
   }
 }
-
