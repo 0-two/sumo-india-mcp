@@ -1,0 +1,46 @@
+{
+  "two_wheeler": {
+    "vClass": "motorcycle",
+    "length": 2.0,
+    "width": 0.8,
+    "minGap": 0.5,
+    "minGapLat": 0.2,
+    "accel": 3.5,
+    "decel": 4.5,
+    "maxSpeed": 22.2,
+    "description": "Indian commuter motorcycle / scooter with high maneuverability and gap-acceptance filtering capability."
+  },
+  "auto_rickshaw": {
+    "vClass": "custom1",
+    "length": 2.6,
+    "width": 1.4,
+    "minGap": 0.8,
+    "minGapLat": 0.3,
+    "accel": 2.2,
+    "decel": 3.5,
+    "maxSpeed": 16.7,
+    "description": "Three-wheeler auto-rickshaw characterized by non-lane disciplined lateral gap filling and moderate acceleration."
+  },
+  "passenger_car": {
+    "vClass": "passenger",
+    "length": 4.2,
+    "width": 1.8,
+    "minGap": 1.2,
+    "minGapLat": 0.5,
+    "accel": 2.6,
+    "decel": 4.5,
+    "maxSpeed": 27.8,
+    "description": "Typical compact Indian hatchback/sedan operating with tighter lateral clearances than standard Western presets."
+  },
+  "bus": {
+    "vClass": "bus",
+    "length": 12.0,
+    "width": 2.5,
+    "minGap": 1.5,
+    "minGapLat": 0.6,
+    "accel": 1.2,
+    "decel": 3.0,
+    "maxSpeed": 19.4,
+    "description": "Standard public transit bus producing significant queue formation and overtaking behavior in heterogeneous traffic."
+  }
+}

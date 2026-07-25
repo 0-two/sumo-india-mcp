@@ -1,0 +1,35 @@
+{
+  "version": "1.0.0",
+  "widgets": [
+    {
+      "uri": "simulation-results",
+      "name": "Indian Traffic Simulation Results",
+      "description": "Interactive dashboard displaying heterogeneous gap-acceptance traffic metrics and congestion severity.",
+      "tags": ["traffic", "sumo", "simulation", "india", "metrics"],
+      "examples": [
+        {
+          "name": "Moderate Congestion Example",
+          "description": "Simulation outcome showing moderate waiting delays across an Indian road intersection.",
+          "data": {
+            "success": true,
+            "message": "Headless SUMO Indian heterogeneous traffic simulation completed successfully at t=3600s.",
+            "metrics": {
+              "meanWaitingTime": 18.5,
+              "meanTravelTime": 142.3,
+              "running": 45,
+              "additional_stats": {
+                "simulation_end_time_s": 3600,
+                "total_loaded_vehicles": 300,
+                "total_arrived_vehicles": 255,
+                "collisions_reported": 0
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "generatedAt": "2026-07-25T13:35:00.000Z"
+}
+
+
